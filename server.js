@@ -43,17 +43,17 @@ app.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     try {
       const newUser = new User({ username: req.body.username });
       const savedUser = await newUser.save();
-      res.json({ username: savedUser.username, _id: savedUser._id });
+      res.json({ username: savedUser.username, _id: savedUser._id }); // This should match the required structure
     } catch (err) {
       console.error("Error saving user:", err);
       res.status(500).json({ error: 'Server error saving user' });
     }
   }
 );
+
 
 // Get all users
 app.get('/api/users', async (req, res) => {
@@ -79,11 +79,9 @@ app.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     try {
       const { description, duration, date } = req.body;
       const userId = req.params._id;
-
       const user = await User.findById(userId);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -95,7 +93,6 @@ app.post(
       });
 
       const savedExercise = await exercise.save();
-
       res.json({
         username: user.username,
         description: savedExercise.description,
@@ -110,12 +107,12 @@ app.post(
   }
 );
 
+
 // Get a user's exercise log
 app.get('/api/users/:_id/logs', async (req, res) => {
   try {
     const { from, to, limit } = req.query;
     const userId = req.params._id;
-
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -130,7 +127,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (limit) exercises = exercises.limit(parseInt(limit));
 
     const exerciseLog = await exercises.exec();
-
     res.json({
       username: user.username,
       count: exerciseLog.length,
@@ -146,6 +142,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     res.status(500).json({ error: 'Server error retrieving exercise log' });
   }
 });
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;
