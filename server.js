@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 app.use(cors());
@@ -13,13 +14,13 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Define User Schema and Model
+// User Model
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
 });
 const User = mongoose.model('User', userSchema);
 
-// Define Exercise Schema and Model
+// Exercise Model
 const exerciseSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   description: { type: String, required: true },
@@ -28,76 +29,95 @@ const exerciseSchema = new mongoose.Schema({
 });
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
+// Home route
 app.get('/', (req, res) => {
   res.send('Welcome to the Exercise Tracker API');
 });
 
-// Endpoint to create a new user
-app.post('/api/users', async (req, res) => {
-  try {
-    const newUser = new User({ username: req.body.username });
-    const savedUser = await newUser.save();
+// Create a new user
+app.post(
+  '/api/users',
+  body('username').notEmpty().withMessage('Username is required'),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-    // Response structure for User
-    res.json({ username: savedUser.username, _id: savedUser._id });
-  } catch (err) {
-    console.error("Error saving user:", err);
-    res.json({ error: 'Error saving user' });
+    try {
+      const newUser = new User({ username: req.body.username });
+      const savedUser = await newUser.save();
+      res.json({ username: savedUser.username, _id: savedUser._id });
+    } catch (err) {
+      console.error("Error saving user:", err);
+      res.status(500).json({ error: 'Server error saving user' });
+    }
   }
-});
+);
 
-// Endpoint to get all users
+// Get all users
 app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({}, { __v: 0 });
-
-    // Format each user as required
     res.json(users.map(user => ({ username: user.username, _id: user._id })));
   } catch (err) {
-    res.json({ error: 'Error fetching users' });
+    console.error("Error fetching users:", err);
+    res.status(500).json({ error: 'Server error fetching users' });
   }
 });
 
-// Endpoint to add an exercise to a user
-app.post('/api/users/:_id/exercises', async (req, res) => {
-  try {
-    const { description, duration, date } = req.body;
-    const userId = req.params._id;
+// Add an exercise to a user
+app.post(
+  '/api/users/:_id/exercises',
+  [
+    body('description').notEmpty().withMessage('Description is required'),
+    body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
+    body('date').optional().isISO8601().toDate().withMessage('Date must be in valid format'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-    const user = await User.findById(userId);
-    if (!user) return res.json({ error: 'User not found' });
+    try {
+      const { description, duration, date } = req.body;
+      const userId = req.params._id;
 
-    const exercise = new Exercise({
-      userId,
-      description,
-      duration: parseInt(duration),
-      date: date ? new Date(date) : new Date(),
-    });
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const savedExercise = await exercise.save();
+      const exercise = new Exercise({
+        userId,
+        description,
+        duration: parseInt(duration),
+        date: date || new Date(),
+      });
 
-    // Response structure for Exercise
-    res.json({
-      username: user.username,
-      description: savedExercise.description,
-      duration: savedExercise.duration,
-      date: savedExercise.date.toDateString(),
-      _id: userId,
-    });
-  } catch (err) {
-    console.error("Error adding exercise:", err);
-    res.json({ error: 'Error adding exercise' });
+      const savedExercise = await exercise.save();
+
+      res.json({
+        username: user.username,
+        description: savedExercise.description,
+        duration: savedExercise.duration,
+        date: savedExercise.date.toDateString(),
+        _id: userId,
+      });
+    } catch (err) {
+      console.error("Error adding exercise:", err);
+      res.status(500).json({ error: 'Server error adding exercise' });
+    }
   }
-});
+);
 
-// Endpoint to get a user's exercise log
+// Get a user's exercise log
 app.get('/api/users/:_id/logs', async (req, res) => {
   try {
     const { from, to, limit } = req.query;
     const userId = req.params._id;
 
     const user = await User.findById(userId);
-    if (!user) return res.json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     let filter = { userId };
     if (from || to) {
@@ -111,7 +131,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     const exerciseLog = await exercises.exec();
 
-    // Response structure for Log
     res.json({
       username: user.username,
       count: exerciseLog.length,
@@ -124,7 +143,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     });
   } catch (err) {
     console.error("Error retrieving exercise log:", err);
-    res.json({ error: 'Error retrieving exercise log' });
+    res.status(500).json({ error: 'Server error retrieving exercise log' });
   }
 });
 
