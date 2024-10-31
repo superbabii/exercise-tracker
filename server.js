@@ -2,10 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Add CORS
+const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Enable CORS
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Connect to MongoDB
@@ -38,7 +38,7 @@ app.post('/api/users', async (req, res) => {
     const newUser = new User({ username: req.body.username });
     const savedUser = await newUser.save();
 
-    // Return only the required properties
+    // Response should include only `username` and `_id`
     res.json({ username: savedUser.username, _id: savedUser._id });
   } catch (err) {
     console.error("Error saving user:", err);
@@ -46,11 +46,12 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-
 // Endpoint to get all users
 app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({}, { __v: 0 });
+
+    // Each user object should have only `username` and `_id`
     res.json(users.map(user => ({ username: user.username, _id: user._id })));
   } catch (err) {
     res.json({ error: 'Error fetching users' });
@@ -74,6 +75,8 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     });
 
     const savedExercise = await exercise.save();
+
+    // Response structure must include `username`, `description`, `duration`, `date`, and `_id`
     res.json({
       username: user.username,
       description: savedExercise.description,
@@ -108,6 +111,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     const exerciseLog = await exercises.exec();
 
+    // Ensure log format includes `description`, `duration`, and `date` as required
     res.json({
       username: user.username,
       count: exerciseLog.length,
