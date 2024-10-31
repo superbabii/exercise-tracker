@@ -51,9 +51,15 @@ app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({}, { __v: 0 });
 
-    // Each user object should have only `username` and `_id`
-    res.json(users.map(user => ({ username: user.username, _id: user._id })));
+    // Map over users to only return `username` and `_id`
+    const formattedUsers = users.map(user => ({
+      username: user.username,
+      _id: user._id
+    }));
+
+    res.json(formattedUsers);
   } catch (err) {
+    console.error("Error fetching users:", err);
     res.json({ error: 'Error fetching users' });
   }
 });
