@@ -38,7 +38,7 @@ app.post('/api/users', async (req, res) => {
     const newUser = new User({ username: req.body.username });
     const savedUser = await newUser.save();
 
-    // Response should include only `username` and `_id`
+    // Response structure for User
     res.json({ username: savedUser.username, _id: savedUser._id });
   } catch (err) {
     console.error("Error saving user:", err);
@@ -51,15 +51,9 @@ app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({}, { __v: 0 });
 
-    // Map over users to only return `username` and `_id`
-    const formattedUsers = users.map(user => ({
-      username: user.username,
-      _id: user._id
-    }));
-
-    res.json(formattedUsers);
+    // Format each user as required
+    res.json(users.map(user => ({ username: user.username, _id: user._id })));
   } catch (err) {
-    console.error("Error fetching users:", err);
     res.json({ error: 'Error fetching users' });
   }
 });
@@ -82,7 +76,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 
     const savedExercise = await exercise.save();
 
-    // Response structure must include `username`, `description`, `duration`, `date`, and `_id`
+    // Response structure for Exercise
     res.json({
       username: user.username,
       description: savedExercise.description,
@@ -117,12 +111,12 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     const exerciseLog = await exercises.exec();
 
-    // Ensure log format includes `description`, `duration`, and `date` as required
+    // Response structure for Log
     res.json({
       username: user.username,
       count: exerciseLog.length,
       _id: userId,
-      log: exerciseLog.map((ex) => ({
+      log: exerciseLog.map(ex => ({
         description: ex.description,
         duration: ex.duration,
         date: ex.date.toDateString(),
