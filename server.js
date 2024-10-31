@@ -37,12 +37,15 @@ app.post('/api/users', async (req, res) => {
   try {
     const newUser = new User({ username: req.body.username });
     const savedUser = await newUser.save();
+
+    // Return only the required properties
     res.json({ username: savedUser.username, _id: savedUser._id });
   } catch (err) {
     console.error("Error saving user:", err);
     res.json({ error: 'Error saving user' });
   }
 });
+
 
 // Endpoint to get all users
 app.get('/api/users', async (req, res) => {
