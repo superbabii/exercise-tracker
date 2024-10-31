@@ -15,7 +15,6 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
 });
-
 const User = mongoose.model('User', userSchema);
 
 // Define Exercise Schema and Model
@@ -39,9 +38,11 @@ app.post('/api/users', async (req, res) => {
     const savedUser = await newUser.save();
     res.json({ username: savedUser.username, _id: savedUser._id });
   } catch (err) {
+    console.error("Error saving user:", err); // Add this line to log the error
     res.json({ error: 'Error saving user' });
   }
 });
+
 
 // Endpoint to get all users
 app.get('/api/users', async (req, res) => {
@@ -114,6 +115,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       })),
     });
   } catch (err) {
+    console.error("Error retrieving exercise log:", err); // Log specific error
     res.json({ error: 'Error retrieving exercise log' });
   }
 });
