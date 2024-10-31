@@ -42,7 +42,7 @@ app.post('/api/users', async (req, res) => {
 // Endpoint to get all users
 app.get('/api/users', async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({}, { __v: 0 });
     res.json(users);
   } catch (err) {
     res.json({ error: 'Error fetching users' });
