@@ -24,7 +24,6 @@ const exerciseSchema = new mongoose.Schema({
   duration: { type: Number, required: true },
   date: { type: Date, default: Date.now },
 });
-
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 app.get('/', (req, res) => {
@@ -38,11 +37,10 @@ app.post('/api/users', async (req, res) => {
     const savedUser = await newUser.save();
     res.json({ username: savedUser.username, _id: savedUser._id });
   } catch (err) {
-    console.error("Error saving user:", err); // Add this line to log the error
+    console.error("Error saving user:", err);
     res.json({ error: 'Error saving user' });
   }
 });
-
 
 // Endpoint to get all users
 app.get('/api/users', async (req, res) => {
@@ -79,6 +77,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       _id: userId,
     });
   } catch (err) {
+    console.error("Error adding exercise:", err);
     res.json({ error: 'Error adding exercise' });
   }
 });
@@ -115,7 +114,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       })),
     });
   } catch (err) {
-    console.error("Error retrieving exercise log:", err); // Log specific error
+    console.error("Error retrieving exercise log:", err);
     res.json({ error: 'Error retrieving exercise log' });
   }
 });
