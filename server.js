@@ -28,6 +28,10 @@ const exerciseSchema = new mongoose.Schema({
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
+app.get('/', (req, res) => {
+  res.send('Welcome to the Exercise Tracker API');
+});
+
 // Endpoint to create a new user
 app.post('/api/users', async (req, res) => {
   try {
